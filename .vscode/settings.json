@@ -11,7 +11,14 @@
         "stdio.h": "c",
         "esp_flash.h": "c",
         "i2c_master.h": "c",
-        "format": "c"
+        "format": "c",
+        "ambient_sense.h": "c",
+        "esp_mac.h": "c",
+        "mbcontroller.h": "c",
+        "modbus_params.h": "c",
+        "esp_modbus_master.h": "c",
+        "esp_modbus_slave.h": "c",
+        "text_encoding": "c"
     },
     "idf.portWin": "COM15"
 }
