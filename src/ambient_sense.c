@@ -111,7 +111,7 @@ void ambient_sense_task(void *pvParameter)
         ret = bme68x_get_data(BME68X_FORCED_MODE, &data, &n_fields, &bme688_handle);
         if (ret == BME68X_OK && n_fields > 0)
         {
-            ESP_LOGI(LOG_TAG, "Temperature: %.1f°C, Pressure: %.1fhPa, Humidity: %.1f%%, Gas Resistance: %.2fMOhms.", data.temperature, data.pressure / 100.0, data.humidity, data.gas_resistance / 1e6);
+            ESP_LOGV(LOG_TAG, "Temperature: %.1f°C, Pressure: %.1fhPa, Humidity: %.1f%%, Gas Resistance: %.2fMOhms.", data.temperature, data.pressure / 100.0, data.humidity, data.gas_resistance / 1e6);
         }
         else
         {
