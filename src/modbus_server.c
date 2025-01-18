@@ -62,6 +62,8 @@ static portMUX_TYPE param_lock = portMUX_INITIALIZER_UNLOCKED;
 
 #define MB_MDNS_INSTANCE(pref) pref "mb_slave_tcp"
 
+char dns_hostname_buffer[32] = {0};
+
 mb_communication_info_t comm_info = {
     .tcp_opts = {
         .mode = MB_TCP,
@@ -101,10 +103,9 @@ static inline char *gen_host_name_str(char *service_name, char *name)
 
 static void start_mdns_service(void)
 {
-    char temp_str[32] = {0};
     uint8_t sta_mac[6] = {0};
     ESP_ERROR_CHECK(esp_read_mac(sta_mac, ESP_MAC_WIFI_STA));
-    char *hostname = gen_host_name_str(MB_MDNS_INSTANCE(""), temp_str);
+    char *hostname = gen_host_name_str(MB_MDNS_INSTANCE(""), dns_hostname_buffer);
     // initialize mDNS
     ESP_ERROR_CHECK(mdns_init());
     // set mDNS hostname (required if you want to advertise services)
@@ -121,9 +122,11 @@ static void start_mdns_service(void)
     // initialize service
     ESP_ERROR_CHECK(mdns_service_add(hostname, "_modbus", "_tcp", MB_MDNS_PORT, serviceTxtData, 1));
     // add mac key string text item
-    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mac", gen_mac_str(sta_mac, "\0", temp_str)));
+    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mac", gen_mac_str(sta_mac, "\0", dns_hostname_buffer)));
     // add slave id key txt item
-    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mb_id", gen_id_str("\0", temp_str)));
+    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mb_id", gen_id_str("\0", dns_hostname_buffer)));
+
+    comm_info.tcp_opts.dns_name = hostname;
 }
 
 static void stop_mdns_service(void)
