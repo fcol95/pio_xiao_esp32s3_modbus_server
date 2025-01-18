@@ -74,10 +74,11 @@ mb_communication_info_t comm_info = {
 #else
         .addr_type = MB_IPV6,
 #endif
-        .ip_addr_table = NULL,
-        .ip_netif_ptr = NULL,
-        .dns_name = NULL,
+        .ip_addr_table = NULL,       //< Bind to any address
+        .ip_netif_ptr = NULL,        //< Set during slave_init
+        .dns_name = NULL,            //< Master only option
         .start_disconnected = false, //< Master only option
+        .uid = MB_SLAVE_ADDR,
     },
 };
 void *slave_handler = NULL;
@@ -121,12 +122,12 @@ static void start_mdns_service(void)
 
     // initialize service
     ESP_ERROR_CHECK(mdns_service_add(hostname, "_modbus", "_tcp", MB_MDNS_PORT, serviceTxtData, 1));
-    // add mac key string text item
-    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mac", gen_mac_str(sta_mac, "\0", dns_hostname_buffer)));
-    // add slave id key txt item
-    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mb_id", gen_id_str("\0", dns_hostname_buffer)));
 
-    comm_info.tcp_opts.dns_name = hostname;
+    char temp_str[32] = {0};
+    // add mac key string text item
+    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mac", gen_mac_str(sta_mac, "\0", temp_str)));
+    // add slave id key txt item
+    ESP_ERROR_CHECK(mdns_service_txt_item_set("_modbus", "_tcp", "mb_id", gen_id_str("\0", temp_str)));
 }
 
 static void stop_mdns_service(void)
@@ -182,8 +183,8 @@ static void slave_operation_func(void)
     for (; holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;)
     {
         // Check for read/write events of Modbus master for certain events
-        (void)mbc_slave_check_event(&slave_handler, MB_READ_WRITE_MASK);
-        ESP_ERROR_CHECK_WITHOUT_ABORT(mbc_slave_get_param_info(&slave_handler, &reg_info, MB_PAR_INFO_GET_TOUT));
+        (void)mbc_slave_check_event(slave_handler, MB_READ_WRITE_MASK);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(mbc_slave_get_param_info(slave_handler, &reg_info, MB_PAR_INFO_GET_TOUT));
         const char *rw_str = (reg_info.type & MB_READ_MASK) ? "READ" : "WRITE";
         // Filter events and process them accordingly
         if (reg_info.type & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD))
@@ -322,15 +323,16 @@ static esp_err_t slave_init()
 {
     mb_register_area_descriptor_t reg_area; // Modbus register area descriptor structure
 
+    comm_info.tcp_opts.ip_netif_ptr = (void *)get_example_netif();
+
     // Initialization of Modbus controller - Setup communication parameters and start stack
     esp_err_t ret = mbc_slave_create_tcp(&comm_info, &slave_handler);
     MB_RETURN_ON_FALSE((ret == ESP_OK && slave_handler != NULL), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_create_tcp failed!");
 
-    comm_info.tcp_opts.ip_addr_table = NULL; // Bind to any address
-    comm_info.tcp_opts.ip_netif_ptr = (void *)get_example_netif();
-    comm_info.tcp_opts.uid = MB_SLAVE_ADDR;
+    // Init Modbus slave controller interface handle (reset descriptors list)
+    mbc_slave_init_iface(slave_handler);
 
     // The code below initializes Modbus register area descriptors
     // for Modbus Holding Registers, Input Registers, Coils and Discrete Inputs
@@ -342,7 +344,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_HOLDING_START_AREA0;                             // Offset of register area in Modbus protocol
     reg_area.address = (void *)&holding_reg_params.holding_data0;                   // Set pointer to storage instance
     reg_area.size = (MB_REG_HOLDING_START_AREA1 - MB_REG_HOLDING_START_AREA0) << 1; // Set the size of register storage instance
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -352,7 +354,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_HOLDING_START_AREA1;           // Offset of register area in Modbus protocol
     reg_area.address = (void *)&holding_reg_params.holding_data4; // Set pointer to storage instance
     reg_area.size = sizeof(float) << 2;                           // Set the size of register storage instance
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -363,7 +365,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_INPUT_START_AREA0;
     reg_area.address = (void *)&input_reg_params.input_data0;
     reg_area.size = sizeof(float) << 2;
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -372,7 +374,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_INPUT_START_AREA1;
     reg_area.address = (void *)&input_reg_params.input_data4;
     reg_area.size = sizeof(float) << 2;
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -383,7 +385,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_COILS_START;
     reg_area.address = (void *)&coil_reg_params;
     reg_area.size = sizeof(coil_reg_params);
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -394,7 +396,7 @@ static esp_err_t slave_init()
     reg_area.start_offset = MB_REG_DISCRETE_INPUT_START;
     reg_area.address = (void *)&discrete_reg_params;
     reg_area.size = sizeof(discrete_reg_params);
-    ret = mbc_slave_set_descriptor(&slave_handler, reg_area);
+    ret = mbc_slave_set_descriptor(slave_handler, reg_area);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_set_descriptor fail, returns(0x%x).",
@@ -403,11 +405,8 @@ static esp_err_t slave_init()
     // Set values into known state
     setup_reg_data();
 
-    // Init Modbus controller interface
-    mbc_slave_init_iface(slave_handler);
-
     // Starts of modbus controller and stack
-    ret = mbc_slave_start(&slave_handler);
+    ret = mbc_slave_start(slave_handler);
     MB_RETURN_ON_FALSE((ret == ESP_OK), ESP_ERR_INVALID_STATE,
                        LOG_TAG,
                        "mbc_slave_start fail, returns(0x%x).",
