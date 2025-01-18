@@ -11,3 +11,6 @@ References https://community.platformio.org/t/how-to-use-jtag-built-in-debugger-
 5. Install libusbK driver for USB JTAG/serial debug unit (interface 2).
 6. Use platformio.ini from this project and update COM ports.
 7. Upload then, run "PIO Debug without upload"
+
+# Espressif Modbus TCP Example:
+https://github.com/espressif/esp-idf/tree/master/examples/protocols/modbus/tcp

@@ -1,6 +1,6 @@
 [submodule "vendor/BME68x_SensorAPI"]
 	path = vendor/BME68x_SensorAPI
 	url = https://github.com/boschsensortec/BME68x_SensorAPI.git
-[submodule "vendor/espressif/esp-modbus"]
-	path = vendor/espressif/esp-modbus
+[submodule "components/esp-modbus"]
+	path = components/esp-modbus
 	url = https://github.com/espressif/esp-modbus.git
