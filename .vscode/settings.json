@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.drawio": "xml",
+        "esp_log.h": "c",
+        "task.h": "c",
+        "gpio.h": "c",
+        "sdkconfig.h": "c",
+        "freertos.h": "c",
+        "bme68x.h": "c",
+        "esp_rom_sys.h": "c",
+        "stdio.h": "c",
+        "esp_flash.h": "c",
+        "i2c_master.h": "c",
+        "format": "c"
+    },
+    "idf.portWin": "COM15"
+}
