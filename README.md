@@ -1,5 +1,5 @@
-# Platformio XIAO ESP32S3+Grove Gas Sensor Modbus Ambient Sense Server
-This exploration project is to test the integration of esp-modbus in server(slave) configuration on the XIAO ESP32S3 connected with a Grove Gas Sensor.
+# Platformio XIAO ESP32S3 Modbus Slave Exploration
+This exploration project is to test the integration of esp-modbus in server(slave) configuration on the XIAO ESP32S3 connected on WIFI using the ESP-IDF example connection configuration.
 
 # Seeed Xiao ESP32-S3 references:
 https://docs.platformio.org/en/latest//boards/espressif32/seeed_xiao_esp32s3.html
