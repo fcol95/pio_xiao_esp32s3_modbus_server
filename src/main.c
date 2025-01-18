@@ -11,7 +11,6 @@
 #include "esp_flash.h"
 #include "esp_log.h"
 
-#include "ambient_sense.h"
 #include "modbus_server.h"
 
 static const char *LOG_TAG = "main";
@@ -69,23 +68,17 @@ void app_main()
     // Set UART log level
     esp_log_level_set(LOG_TAG, ESP_LOG_INFO);
 
-    ESP_LOGI(LOG_TAG, "-- XIAO ESP32S3 Ambient Sense Modbus Server --");
+    ESP_LOGI(LOG_TAG, "-- XIAO ESP32S3 Modbus Server(Slave) Exploration --");
 
     print_board_info();
 
     ESP_LOGI(LOG_TAG, "Starting program...");
 
     // Drivers Init
-    esp_err_t ambient_sense_ret = ambient_sense_init();
-
     esp_err_t modbus_server_ret = modbus_server_init();
 
     // Tasks Init
     xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-    if (ambient_sense_ret == ESP_OK)
-    {
-        xTaskCreate(&ambient_sense_task, "ambient_sense_task", configMINIMAL_STACK_SIZE * 2, NULL, 5, NULL);
-    }
     if (modbus_server_ret == ESP_OK)
     {
         xTaskCreate(&modbus_server_task, "modbus_server_task", configMINIMAL_STACK_SIZE * 2, NULL, 5, NULL);
