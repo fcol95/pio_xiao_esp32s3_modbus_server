@@ -1,7 +1,7 @@
-menu "Modbus Example Configuration"
+menu "Modbus Server Configuration"
 
     config MB_SLAVE_ADDR
-        int "Modbus slave address"
+        int "Modbus server slave address"
         range 1 255
         default 1
         help
