@@ -172,78 +172,6 @@ static void setup_reg_data(void)
     input_reg_params.input_data7 = 4.78;
 }
 
-static void slave_operation_func(void)
-{
-    mb_param_info_t reg_info; // keeps the Modbus registers access information
-
-    ESP_LOGI(LOG_TAG, "Modbus slave stack initialized.");
-    ESP_LOGI(LOG_TAG, "Start modbus test...");
-    // The cycle below will be terminated when parameter holding_data0
-    // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
-    for (; holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;)
-    {
-        // Check for read/write events of Modbus master for certain events
-        (void)mbc_slave_check_event(slave_handler, MB_READ_WRITE_MASK);
-        ESP_ERROR_CHECK_WITHOUT_ABORT(mbc_slave_get_param_info(slave_handler, &reg_info, MB_PAR_INFO_GET_TOUT));
-        const char *rw_str = (reg_info.type & MB_READ_MASK) ? "READ" : "WRITE";
-        // Filter events and process them accordingly
-        if (reg_info.type & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD))
-        {
-            // Get parameter information from parameter queue
-            ESP_LOGI(LOG_TAG, "HOLDING %s (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
-                     rw_str,
-                     reg_info.time_stamp,
-                     (unsigned)reg_info.mb_offset,
-                     (unsigned)reg_info.type,
-                     (uint32_t)reg_info.address,
-                     (unsigned)reg_info.size);
-            if (reg_info.address == (uint8_t *)&holding_reg_params.holding_data0)
-            {
-                portENTER_CRITICAL(&param_lock);
-                holding_reg_params.holding_data0 += MB_CHAN_DATA_OFFSET;
-                if (holding_reg_params.holding_data0 >= (MB_CHAN_DATA_MAX_VAL - MB_CHAN_DATA_OFFSET))
-                {
-                    coil_reg_params.coils_port1 = 0xFF;
-                }
-                portEXIT_CRITICAL(&param_lock);
-            }
-        }
-        else if (reg_info.type & MB_EVENT_INPUT_REG_RD)
-        {
-            ESP_LOGI(LOG_TAG, "INPUT READ (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
-                     reg_info.time_stamp,
-                     (unsigned)reg_info.mb_offset,
-                     (unsigned)reg_info.type,
-                     (uint32_t)reg_info.address,
-                     (unsigned)reg_info.size);
-        }
-        else if (reg_info.type & MB_EVENT_DISCRETE_RD)
-        {
-            ESP_LOGI(LOG_TAG, "DISCRETE READ (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
-                     reg_info.time_stamp,
-                     (unsigned)reg_info.mb_offset,
-                     (unsigned)reg_info.type,
-                     (uint32_t)reg_info.address,
-                     (unsigned)reg_info.size);
-        }
-        else if (reg_info.type & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR))
-        {
-            ESP_LOGI(LOG_TAG, "COILS %s (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
-                     rw_str,
-                     reg_info.time_stamp,
-                     (unsigned)reg_info.mb_offset,
-                     (unsigned)reg_info.type,
-                     (uint32_t)reg_info.address,
-                     (unsigned)reg_info.size);
-            if (coil_reg_params.coils_port1 == 0xFF)
-                break;
-        }
-    }
-    // Destroy of Modbus controller on alarm
-    ESP_LOGI(LOG_TAG, "Modbus controller destroyed.");
-    vTaskDelay(100);
-}
-
 static esp_err_t init_services(void)
 {
     esp_err_t result = nvs_flash_init();
@@ -457,14 +385,78 @@ esp_err_t modbus_server_init(void)
 
 void modbus_server_task(void *pvParameter)
 {
-    // The Modbus slave logic is located in this function (user handling of Modbus)
-    slave_operation_func();
+    // The Modbus server(slave) logic is located in this function (user handling of Modbus)
+    // The cycle below will be terminated when parameter holding_data0
+    // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
+    mb_param_info_t reg_info; // keeps the Modbus registers access information
 
-    ESP_ERROR_CHECK(slave_destroy());
-    ESP_ERROR_CHECK(destroy_services());
+    ESP_LOGI(LOG_TAG, "Modbus slave stack initialized.");
+    ESP_LOGI(LOG_TAG, "Start modbus test...");
 
+    // for (; holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;)
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // Check for read/write events of Modbus master for certain events
+        (void)mbc_slave_check_event(slave_handler, MB_READ_WRITE_MASK);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(mbc_slave_get_param_info(slave_handler, &reg_info, MB_PAR_INFO_GET_TOUT));
+        const char *rw_str = (reg_info.type & MB_READ_MASK) ? "READ" : "WRITE";
+        // Filter events and process them accordingly
+        if (reg_info.type & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD))
+        {
+            // Get parameter information from parameter queue
+            ESP_LOGI(LOG_TAG, "HOLDING %s (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
+                     rw_str,
+                     reg_info.time_stamp,
+                     (unsigned)reg_info.mb_offset,
+                     (unsigned)reg_info.type,
+                     (uint32_t)reg_info.address,
+                     (unsigned)reg_info.size);
+            if (reg_info.address == (uint8_t *)&holding_reg_params.holding_data0)
+            {
+                portENTER_CRITICAL(&param_lock);
+                holding_reg_params.holding_data0 += MB_CHAN_DATA_OFFSET;
+                if (holding_reg_params.holding_data0 >= (MB_CHAN_DATA_MAX_VAL - MB_CHAN_DATA_OFFSET))
+                {
+                    coil_reg_params.coils_port1 = 0xFF;
+                }
+                portEXIT_CRITICAL(&param_lock);
+            }
+        }
+        else if (reg_info.type & MB_EVENT_INPUT_REG_RD)
+        {
+            ESP_LOGI(LOG_TAG, "INPUT READ (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
+                     reg_info.time_stamp,
+                     (unsigned)reg_info.mb_offset,
+                     (unsigned)reg_info.type,
+                     (uint32_t)reg_info.address,
+                     (unsigned)reg_info.size);
+        }
+        else if (reg_info.type & MB_EVENT_DISCRETE_RD)
+        {
+            ESP_LOGI(LOG_TAG, "DISCRETE READ (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
+                     reg_info.time_stamp,
+                     (unsigned)reg_info.mb_offset,
+                     (unsigned)reg_info.type,
+                     (uint32_t)reg_info.address,
+                     (unsigned)reg_info.size);
+        }
+        else if (reg_info.type & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR))
+        {
+            ESP_LOGI(LOG_TAG, "COILS %s (%" PRIu32 " us), ADDR:%u, TYPE:%u, INST_ADDR:0x%" PRIx32 ", SIZE:%u",
+                     rw_str,
+                     reg_info.time_stamp,
+                     (unsigned)reg_info.mb_offset,
+                     (unsigned)reg_info.type,
+                     (uint32_t)reg_info.address,
+                     (unsigned)reg_info.size);
+            if (coil_reg_params.coils_port1 == 0xFF)
+                break;
+        }
+        vTaskDelay(10);
     }
+    // Destroy of Modbus controller on alarm
+    ESP_LOGI(LOG_TAG, "Modbus controller destroyed.");
+    vTaskDelay(100);
+    ESP_ERROR_CHECK(slave_destroy());
+    ESP_ERROR_CHECK(destroy_services());
 }
