@@ -386,15 +386,14 @@ esp_err_t modbus_server_init(void)
 void modbus_server_task(void *pvParameter)
 {
     // The Modbus server(slave) logic is located in this function (user handling of Modbus)
-    // The cycle below will be terminated when parameter holding_data0
-    // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
     mb_param_info_t reg_info; // keeps the Modbus registers access information
 
     ESP_LOGI(LOG_TAG, "Modbus slave stack initialized.");
     ESP_LOGI(LOG_TAG, "Start modbus test...");
 
-    // for (; holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;)
-    while (1)
+    // The cycle below will be terminated when parameter holding_data0
+    // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
+    for (; holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;)
     {
         // Check for read/write events of Modbus master for certain events
         (void)mbc_slave_check_event(slave_handler, MB_READ_WRITE_MASK);
