@@ -14,7 +14,7 @@ References https://community.platformio.org/t/how-to-use-jtag-built-in-debugger-
 4. Install USB CDC driver for USB JTAG/serial debug unit (interface 0).
 5. Install libusbK driver for USB JTAG/serial debug unit (interface 2).
 6. Use platformio.ini from this project and update COM ports.
-7. Upload then, run "PIO Debug without upload"
+7. Upload and debug should now work through esp-builtin interface!
 
 # Espressif Modbus TCP Example:
 https://github.com/espressif/esp-idf/tree/master/examples/protocols/modbus/tcp
