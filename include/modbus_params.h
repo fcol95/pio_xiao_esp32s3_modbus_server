@@ -10,72 +10,89 @@
  *   can be addressed by Modbus protocol. Define these structures per your needs in
  *   your application. Below is just an example of possible parameters.
  *====================================================================================*/
-#ifndef _DEVICE_PARAMS
-#define _DEVICE_PARAMS
+#ifndef MODBUS_PARAMS__H__
+#define MODBUS_PARAMS__H__
 
 #include <stdint.h>
 
+#include "esp_err.h"
+
+#include "esp_modbus_slave.h"
+
 // This file defines structure of modbus parameters which reflect correspond modbus address space
 // for each modbus register type (coils, discreet inputs, holding registers, input registers)
-#pragma pack(push, 1)
-typedef struct
+// It also has proper access funtions to access those parameters.
+
+typedef enum
 {
-    uint8_t discrete_input0:1;
-    uint8_t discrete_input1:1;
-    uint8_t discrete_input2:1;
-    uint8_t discrete_input3:1;
-    uint8_t discrete_input4:1;
-    uint8_t discrete_input5:1;
-    uint8_t discrete_input6:1;
-    uint8_t discrete_input7:1;
-    uint8_t discrete_input_port1;
-    uint8_t discrete_input_port2;
-} discrete_reg_params_t;
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct
+    MODBUS_INPUT_REGISTER_FLOAT_1 = 0,        //< Input Registers Address 1 - Length 2
+    MODBUS_INPUT_REGISTER_FLOAT_2 = 0,        //< Input Registers Address 3 - Length 2
+    MODBUS_PARAMS_INPUT_REGISTER_FLOAT_COUNT, //< Do not use this value
+} ModbusParams_InReg_Float_t;
+typedef enum
 {
-    uint8_t coils_port0;
-    uint8_t coils_port1;
-    uint8_t coils_port2;
-} coil_reg_params_t;
-#pragma pack(pop)
+    MODBUS_INPUT_REGISTER_UINT_1 = 0,        // Input Registers Address 5 - Length 1
+    MODBUS_INPUT_REGISTER_UINT_2,            // Input Registers Address 6 - Length 1
+    MODBUS_PARAMS_INPUT_REGISTER_UINT_COUNT, //< Do not use this value
+} ModbusParams_InReg_UInt_t;
 
-#pragma pack(push, 1)
-typedef struct
+typedef enum
 {
-    float input_data0; // 0
-    float input_data1; // 2
-    float input_data2; // 4
-    float input_data3; // 6
-    uint16_t data[150]; // 8 + 150 = 158
-    float input_data4; // 158
-    float input_data5;
-    float input_data6;
-    float input_data7;
-    uint16_t data_block1[150];
-} input_reg_params_t;
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct
+    MODBUS_HOLDING_REGISTER_FLOAT_1 = 0,        //< Holding Registers Address 1 - Length 2
+    MODBUS_HOLDING_REGISTER_FLOAT_2 = 0,        //< Holding Registers Address 3 - Length 2
+    MODBUS_PARAMS_HOLDING_REGISTER_FLOAT_COUNT, //< Do not use this value
+} ModbusParams_HoldReg_Float_t;
+typedef enum
 {
-    float holding_data0;
-    float holding_data1;
-    float holding_data2;
-    float holding_data3;
-    uint16_t test_regs[150];
-    float holding_data4;
-    float holding_data5;
-    float holding_data6;
-    float holding_data7;
-} holding_reg_params_t;
-#pragma pack(pop)
+    MODBUS_HOLDING_REGISTER_UINT_1 = 0,        // Holding Registers Address 5 - Length 1
+    MODBUS_HOLDING_REGISTER_UINT_2,            // Holding Registers Address 6 - Length 1
+    MODBUS_PARAMS_HOLDING_REGISTER_UINT_COUNT, //< Do not use this value
+} ModbusParams_HoldReg_UInt_t;
 
-extern holding_reg_params_t holding_reg_params;
-extern input_reg_params_t input_reg_params;
-extern coil_reg_params_t coil_reg_params;
-extern discrete_reg_params_t discrete_reg_params;
+typedef enum
+{
+    MODBUS_COIL_1 = 0,        // Coil Port 1 Bit 1 - Address 1
+    MODBUS_COIL_2,            // Coil Port 1 Bit 2 - Address 2
+    MODBUS_COIL_3,            // Coil Port 1 Bit 3 - Address 3
+    MODBUS_PARAMS_COIL_COUNT, //< Do not use this value
+} ModbusParams_Coil_t;
 
-#endif // !defined(_DEVICE_PARAMS)
+typedef enum
+{
+    MODBUS_DISCRETE_INPUT_1 = 0,        // Discrete Inpout Port 1 Bit 1 - Address 1
+    MODBUS_DISCRETE_INPUT_2,            // Discrete Inpout Port 1 Bit 2 - Address 2
+    MODBUS_PARAMS_DISCRETE_INPUT_COUNT, //< Do not use this value
+} ModbusParams_DiscreteInput_t;
+
+#define MODBUS_PARAMS_COIL_PORTS_COUNT ((uint8_t)(MODBUS_PARAMS_COIL_COUNT / 8) + 1)
+#define MODBUS_PARAMS_DISCRETE_INPUT_PORTS_COUNT ((uint8_t)(MODBUS_PARAMS_DISCRETE_INPUT_COUNT / 8) + 1)
+
+esp_err_t modbus_params_init(void *slave_handler);
+
+esp_err_t modbus_params_get_input_register_float_reg_area(ModbusParams_InReg_Float_t index,
+                                                          mb_register_area_descriptor_t *const reg_area);
+esp_err_t modbus_params_get_input_register_uint_reg_area(ModbusParams_InReg_UInt_t index,
+                                                         mb_register_area_descriptor_t *const reg_area);
+esp_err_t modbus_params_get_holding_register_uint_reg_area(ModbusParams_HoldReg_UInt_t index,
+                                                           mb_register_area_descriptor_t *const reg_area);
+esp_err_t modbus_params_get_holding_register_float_reg_area(ModbusParams_HoldReg_Float_t index,
+                                                            mb_register_area_descriptor_t *const reg_area);
+esp_err_t modbus_params_get_coil_port_reg_area(uint8_t index, mb_register_area_descriptor_t *const reg_area);
+esp_err_t modbus_params_get_discrete_input_port_reg_area(ModbusParams_DiscreteInput_t index,
+                                                         mb_register_area_descriptor_t *const reg_area);
+
+esp_err_t modbus_params_set_input_register_float(ModbusParams_InReg_Float_t index, float value);
+esp_err_t modbus_params_set_input_register_uint(ModbusParams_InReg_UInt_t index, uint16_t value);
+
+esp_err_t modbus_params_set_holding_register_uint(ModbusParams_HoldReg_UInt_t index, uint16_t value);
+esp_err_t modbus_params_get_holding_register_uint(ModbusParams_HoldReg_UInt_t index, uint16_t *const value);
+
+esp_err_t modbus_params_set_holding_register_float(ModbusParams_HoldReg_Float_t index, float value);
+esp_err_t modbus_params_get_holding_register_float(ModbusParams_HoldReg_Float_t index, float *const value);
+
+esp_err_t modbus_params_set_coil_state(ModbusParams_Coil_t index, bool state);
+esp_err_t modbus_params_get_coil_state(ModbusParams_Coil_t index, bool *const state);
+
+esp_err_t modbus_params_set_discrete_input_state(ModbusParams_DiscreteInput_t index, bool state);
+
+#endif // MODBUS_PARAMS__H__

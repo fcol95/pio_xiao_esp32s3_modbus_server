@@ -11,6 +11,7 @@
 #include "esp_flash.h"
 #include "esp_log.h"
 
+#include "modbus_params.h"
 #include "modbus_server.h"
 
 static const char *LOG_TAG = "main";
@@ -76,6 +77,16 @@ void app_main()
 
     // Drivers Init
     esp_err_t modbus_server_ret = modbus_server_init();
+
+    // Init some fixed modbus parameters for testing purposes
+    modbus_params_set_input_register_float(MODBUS_INPUT_REGISTER_FLOAT_1, 2.34f);
+    modbus_params_set_input_register_uint(MODBUS_INPUT_REGISTER_UINT_2, 364U);
+
+    modbus_params_set_holding_register_float(MODBUS_HOLDING_REGISTER_FLOAT_1, -56.7f);
+    modbus_params_set_holding_register_uint(MODBUS_HOLDING_REGISTER_UINT_2, 1000U);
+
+    modbus_params_set_coil_state(MODBUS_COIL_3, true);
+    modbus_params_set_discrete_input_state(MODBUS_DISCRETE_INPUT_2, true);
 
     // Tasks Init
     xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
