@@ -4,6 +4,6 @@
 #include "esp_err.h"
 
 esp_err_t modbus_server_init(void);
-void modbus_server_task(void *pvParameter);
+void      modbus_server_task(void *pvParameter);
 
 #endif // MODBUS_SERVER__H__

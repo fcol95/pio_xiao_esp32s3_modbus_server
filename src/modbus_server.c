@@ -20,32 +20,32 @@
 
 static const char *LOG_TAG = "modbus_server";
 
-#define MB_TCP_PORT_NUMBER (CONFIG_FMB_TCP_PORT_DEFAULT)
-#define MB_SLAVE_ADDR (CONFIG_MB_SLAVE_ADDR)
-#define MB_TCP_TIMEOUT 1000
+#define MB_TCP_PORT_NUMBER   (CONFIG_FMB_TCP_PORT_DEFAULT)
+#define MB_SLAVE_ADDR        (CONFIG_MB_SLAVE_ADDR)
+#define MB_TCP_TIMEOUT       1000
 
-#define MB_MDNS_PORT (502)
+#define MB_MDNS_PORT         (502)
 
 #define MB_PAR_INFO_GET_TOUT (10) // Timeout for get parameter info
 
-#define MB_READ_MASK (MB_EVENT_INPUT_REG_RD | MB_EVENT_HOLDING_REG_RD | MB_EVENT_DISCRETE_RD | MB_EVENT_COILS_RD)
-#define MB_WRITE_MASK (MB_EVENT_HOLDING_REG_WR | MB_EVENT_COILS_WR)
-#define MB_READ_WRITE_MASK (MB_READ_MASK | MB_WRITE_MASK)
+#define MB_READ_MASK         (MB_EVENT_INPUT_REG_RD | MB_EVENT_HOLDING_REG_RD | MB_EVENT_DISCRETE_RD | MB_EVENT_COILS_RD)
+#define MB_WRITE_MASK        (MB_EVENT_HOLDING_REG_WR | MB_EVENT_COILS_WR)
+#define MB_READ_WRITE_MASK   (MB_READ_MASK | MB_WRITE_MASK)
 
 #if CONFIG_MB_MDNS_IP_RESOLVER
 
-#if CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
-#define MB_DEVICE_ID (uint32_t) CONFIG_FMB_CONTROLLER_SLAVE_ID
-#endif // CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
+    #if CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
+        #define MB_DEVICE_ID (uint32_t) CONFIG_FMB_CONTROLLER_SLAVE_ID
+    #endif // CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
 
-#define MB_ID_BYTE0(id) ((uint8_t)(id))
-#define MB_ID_BYTE1(id) ((uint8_t)(((uint16_t)(id) >> 8) & 0xFF))
-#define MB_ID_BYTE2(id) ((uint8_t)(((uint32_t)(id) >> 16) & 0xFF))
-#define MB_ID_BYTE3(id) ((uint8_t)(((uint32_t)(id) >> 24) & 0xFF))
+    #define MB_ID_BYTE0(id)        ((uint8_t)(id))
+    #define MB_ID_BYTE1(id)        ((uint8_t)(((uint16_t)(id) >> 8) & 0xFF))
+    #define MB_ID_BYTE2(id)        ((uint8_t)(((uint32_t)(id) >> 16) & 0xFF))
+    #define MB_ID_BYTE3(id)        ((uint8_t)(((uint32_t)(id) >> 24) & 0xFF))
 
-#define MB_ID2STR(id) MB_ID_BYTE0(id), MB_ID_BYTE1(id), MB_ID_BYTE2(id), MB_ID_BYTE3(id)
+    #define MB_ID2STR(id)          MB_ID_BYTE0(id), MB_ID_BYTE1(id), MB_ID_BYTE2(id), MB_ID_BYTE3(id)
 
-#define MB_MDNS_INSTANCE(pref) pref "mb_slave_tcp"
+    #define MB_MDNS_INSTANCE(pref) pref "mb_slave_tcp"
 
 char dns_hostname_buffer[32] = {0};
 
@@ -54,11 +54,11 @@ mb_communication_info_t comm_info = {
         .mode = MB_TCP,
         .port = MB_TCP_PORT_NUMBER,
         .response_tout_ms = MB_TCP_TIMEOUT,
-#if !CONFIG_EXAMPLE_CONNECT_IPV6
+    #if !CONFIG_EXAMPLE_CONNECT_IPV6
         .addr_type = MB_IPV4,
-#else
+    #else
         .addr_type = MB_IPV6,
-#endif                               // CONFIG_EXAMPLE_CONNECT_IPV6
+    #endif // CONFIG_EXAMPLE_CONNECT_IPV6
         .ip_addr_table = NULL,       //< Bind to any address
         .ip_netif_ptr = NULL,        //< Set during slave_init
         .dns_name = NULL,            //< Master only option
