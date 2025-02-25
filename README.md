@@ -18,3 +18,6 @@ References https://community.platformio.org/t/how-to-use-jtag-built-in-debugger-
 
 # Espressif Modbus TCP Example:
 https://github.com/espressif/esp-idf/tree/master/examples/protocols/modbus/tcp
+
+## Buy me a coffee ☕ (or a beer 🍺)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/fcol95)
